@@ -11,9 +11,11 @@ interface ToolbarProps {
   onDomainChange: (domain: Domain) => void;
   onAddNode: (type: string, metadata?: any, def?: any) => void;
   onClear: () => void;
+  onMagicWire: () => void;
+  isMagicWiring: boolean;
 }
 
-export function Toolbar({ domain, onDomainChange, onAddNode, onClear }: ToolbarProps) {
+export function Toolbar({ domain, onDomainChange, onAddNode, onClear, onMagicWire, isMagicWiring }: ToolbarProps) {
   const [activeCategory, setActiveCategory] = useState<string>('microcontrollers');
 
   // Merge all microcontrollers and sensors
@@ -137,32 +139,77 @@ export function Toolbar({ domain, onDomainChange, onAddNode, onClear }: ToolbarP
 
         <div style={{ marginLeft: 'auto', display: 'flex', gap: '12px', alignItems: 'center' }}>
           <button
+            onClick={onMagicWire}
+            disabled={isMagicWiring || domain !== 'physical'}
+            style={{
+              padding: '8px 18px',
+              background: isMagicWiring 
+                ? 'rgba(99, 102, 241, 0.2)' 
+                : 'linear-gradient(135deg, #6366f1 0%, #a855f7 100%)',
+              color: '#fff',
+              border: '1px solid rgba(255, 255, 255, 0.2)',
+              borderRadius: '6px',
+              cursor: isMagicWiring ? 'not-allowed' : 'pointer',
+              fontSize: '13px',
+              fontWeight: '700',
+              boxShadow: isMagicWiring ? 'none' : '0 4px 15px rgba(99, 102, 241, 0.4)',
+              transition: 'all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              opacity: domain !== 'physical' ? 0.5 : 1
+            }}
+            onMouseEnter={(e) => {
+              if (!isMagicWiring) {
+                e.currentTarget.style.transform = 'translateY(-2px) scale(1.05)';
+                e.currentTarget.style.boxShadow = '0 6px 20px rgba(99, 102, 241, 0.6)';
+              }
+            }}
+            onMouseLeave={(e) => {
+              if (!isMagicWiring) {
+                e.currentTarget.style.transform = 'translateY(0) scale(1)';
+                e.currentTarget.style.boxShadow = '0 4px 15px rgba(99, 102, 241, 0.4)';
+              }
+            }}
+          >
+            {isMagicWiring ? (
+              <>
+                <div className="spinner-mini" style={{ width: '12px', height: '12px', border: '2px solid #fff', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+                AI Wiring...
+              </>
+            ) : (
+              <>✨ Magic AI Wire</>
+            )}
+          </button>
+
+          <button
             onClick={onClear}
             style={{
               padding: '8px 18px',
-              background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
-              color: '#fff',
-              border: '1px solid rgba(255, 255, 255, 0.1)',
+              background: 'rgba(255, 255, 255, 0.05)',
+              color: '#ef4444',
+              border: '1px solid rgba(239, 68, 68, 0.3)',
               borderRadius: '6px',
               cursor: 'pointer',
               fontSize: '13px',
               fontWeight: '600',
-              boxShadow: '0 2px 8px rgba(239, 68, 68, 0.3)',
               transition: 'all 0.2s'
             }}
             onMouseEnter={(e) => {
-              e.currentTarget.style.transform = 'translateY(-1px)';
-              e.currentTarget.style.boxShadow = '0 4px 12px rgba(239, 68, 68, 0.4)';
+              e.currentTarget.style.background = 'rgba(239, 68, 68, 0.1)';
             }}
             onMouseLeave={(e) => {
-              e.currentTarget.style.transform = 'translateY(0)';
-              e.currentTarget.style.boxShadow = '0 2px 8px rgba(239, 68, 68, 0.3)';
+              e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)';
             }}
           >
-            Clear All
+            Clear
           </button>
         </div>
       </div>
+
+      <style>{`
+        @keyframes spin { to { transform: rotate(360deg); } }
+      `}</style>
 
       {/* Category Tabs */}
       <div style={{

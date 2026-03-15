@@ -1,10 +1,11 @@
-﻿import { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Domain, Node, Pin, Connection, ValidationResult } from './types';
 import { SceneManager } from './state/scene-manager';
 import { ValidationEngine } from './validation/engine';
 import { Canvas } from './components/Canvas';
 import { Toolbar } from './components/Toolbar';
 import { RealismAnalysisPanel } from './components/RealismAnalysisPanel';
+import { generateAIRealismReport } from './simulation/realism-engine';
 import { MICROCONTROLLERS } from './library/microcontrollers';
 import { ADVANCED_MICROCONTROLLERS } from './library/advanced-microcontrollers';
 import { PHYSICAL_COMPONENTS } from './library/components';
@@ -84,6 +85,7 @@ function App() {
   const [validationResults, setValidationResults] = useState<ValidationResult[]>([]);
   const [domain, setDomain] = useState<Domain>('physical');
   const [isRealismPanelOpen, setIsRealismPanelOpen] = useState(false);
+  const [isMagicWiring, setIsMagicWiring] = useState(false);
 
   // Keyboard shortcuts
   useEffect(() => {
@@ -432,10 +434,66 @@ function App() {
   };
 
   const handleClear = () => {
-    sceneManager.reset();
-    nodeCounter = 0;
-    pinCounter = 0;
     connectionCounter = 0;
+  };
+
+  const handleMagicWire = async () => {
+    if (domain !== 'physical' || isMagicWiring || scene.nodes.length < 2) return;
+    
+    setIsMagicWiring(true);
+    try {
+      const report = await generateAIRealismReport(scene);
+      if (report.aiAnalysis?.wiringSuggestions) {
+        // Apply suggestions one by one
+        for (const sug of report.aiAnalysis.wiringSuggestions) {
+          // Normalize labels for matching
+          const normalize = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, '');
+          const sugFrom = normalize(sug.from);
+          const sugTo = normalize(sug.to);
+
+          // Find nodes by label (better matching)
+          const fromNode = scene.nodes.find(n => normalize(n.label) === sugFrom || normalize(n.label).includes(sugFrom));
+          const toNode = scene.nodes.find(n => normalize(n.label) === sugTo || normalize(n.label).includes(sugTo));
+          
+          if (fromNode && toNode) {
+            // Find appropriate pins with priority
+            const findBestPin = (nodeId: string, searchTerms: string[]) => {
+              const nodePins = scene.pins.filter(p => p.nodeId === nodeId);
+              // Priority 1: Exact matches for labels
+              for (const term of searchTerms) {
+                const p = nodePins.find(p => normalize(p.label) === normalize(term));
+                if (p) return p;
+              }
+              // Priority 2: Includes search terms
+              for (const term of searchTerms) {
+                const p = nodePins.find(p => normalize(p.label).includes(normalize(term)));
+                if (p) return p;
+              }
+              // Priority 3: Fallback to first available signal pin
+              return nodePins.find(p => p.type === 'signal') || nodePins[0];
+            };
+
+            const fromPin = findBestPin(fromNode.id, ['out', 'tx', 'signal', 'output']);
+            const toPin = findBestPin(toNode.id, ['in', 'rx', 'signal', 'input']);
+            
+            if (fromPin && toPin) {
+              const exists = scene.connections.some(c => 
+                (c.fromPinId === fromPin.id && c.toPinId === toPin.id) ||
+                (c.fromPinId === toPin.id && c.toPinId === fromPin.id)
+              );
+              
+              if (!exists) {
+                handleConnectionCreate(fromNode.id, toNode.id, fromPin.id, toPin.id);
+              }
+            }
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Magic Wiring failed:', error);
+    } finally {
+      setIsMagicWiring(false);
+    }
   };
 
   return (
@@ -469,6 +527,8 @@ function App() {
         onDomainChange={handleDomainChange}
         onAddNode={handleAddNode}
         onClear={handleClear}
+        onMagicWire={handleMagicWire}
+        isMagicWiring={isMagicWiring}
       />
       <div style={{ flex: 1, position: 'relative' }}>
         <Canvas

@@ -14,6 +14,7 @@ import { generateBOM, type BOM } from './bom-generator';
 import { analyzeThermal, ThermalAnalysis } from './thermal-analyzer';
 import { analyzePCBDesign, PCBAnalysis } from './pcb-constraints';
 import { analyzeSignalIntegrity, SignalIntegrityAnalysis } from './signal-integrity';
+import { analyzeWithGemini, type AIAnalysisResult } from './gemini-api';
 
 export interface RealismReport {
   circuitSimulation: any;
@@ -22,6 +23,7 @@ export interface RealismReport {
   thermalAnalysis: ThermalAnalysis;
   pcbAnalysis: PCBAnalysis;
   signalIntegrity: SignalIntegrityAnalysis;
+  aiAnalysis?: AIAnalysisResult;
   summary: {
     overallRisk: 'safe' | 'warning' | 'critical';
     estimatedCost: number;
@@ -124,35 +126,27 @@ export function generateRealismReport(scene: Scene): RealismReport {
       
       // REAL power dissipation values from datasheets
       if (type.startsWith('led')) {
-        // LED power = V × I = 2V × 0.02A = 40mW (typical red LED at 20mA)
         power = 40;
       } else if (type.includes('arduino')) {
-        // Arduino operating current 40-100mA @ 5V = 200-500mW
-        power = 250; // 50mA typical
+        power = 250; 
       } else if (type.includes('esp')) {
-        // ESP32 75-160mA @ 3.3V = 250-530mW
-        power = 300; // 90mA typical
+        power = 300; 
       } else if (type.includes('pico') || type.includes('rp2040')) {
-        // RP2040 ~50mA @ 3.3V = 165mW
         power = 165;
       } else if (type === 'resistor') {
-        // Resistor power depends on current
-        // Assuming 100mA through resistor: P = I²R = (0.1)² × 220 = 2.2mW for 220Ω
         const resistance = node.metadata?.resistance || 220;
-        const current = 0.1; // 100mA typical GPIO current
-        power = Math.min((current * current * resistance) * 1000, 250); // Cap at 250mW
+        const voltage = node.metadata?.voltage || 5; 
+        power = Math.min((voltage * voltage / resistance) * 1000, 250); 
       } else if (type === 'capacitor') {
-        // Capacitors minimal dissipation unless in switching circuit
-        power = 5; // 5mW (ESR losses, minimal)
+        power = 5; 
       } else if (type.includes('sensor')) {
-        // Typical sensor current 10-50mA @ 3.3V-5V = 33-250mW
-        power = 100; // 30mA typical
+        power = 100;
+      } else if (type.includes('motor') || type.includes('servo')) {
+        power = node.metadata?.load === 'high' ? 2000 : 500;
       } else if (type === 'breadboard' || type.includes('rail')) {
-        // No power dissipation
         power = 0;
       } else {
-        // Unknown component - minimal estimate
-        power = 10;
+        power = 15;
       }
       
       const key = `${node.label} (${node.id})`;
@@ -203,6 +197,47 @@ export function generateRealismReport(scene: Scene): RealismReport {
     report.summary.overallRisk = 'critical';
   }
 
+  return report;
+}
+
+/**
+ * Generate AI-enhanced realism report
+ */
+export async function generateAIRealismReport(scene: Scene): Promise<RealismReport> {
+  const report = generateRealismReport(scene);
+  
+  try {
+    const aiResult = await analyzeWithGemini({
+      sceneData: {
+        nodes: scene.nodes.map(n => ({ id: n.id, type: n.type, label: n.label, metadata: n.metadata })),
+        connections: scene.connections.map(c => {
+          const fromNode = scene.nodes.find(n => n.id === c.fromNodeId);
+          const toNode = scene.nodes.find(n => n.id === c.toNodeId);
+          return {
+            from: fromNode?.label || c.fromNodeId,
+            to: toNode?.label || c.toNodeId
+          };
+        })
+      },
+      currentAnalysis: {
+        risk: report.summary.overallRisk,
+        violations: report.summary.violations,
+        recommendations: report.summary.recommendations,
+        cost: report.summary.estimatedCost
+      }
+    });
+    
+    report.aiAnalysis = aiResult;
+    
+    // Add AI insights to summary
+    if (aiResult.insights.length > 0) {
+      report.summary.recommendations.push(...aiResult.optimizations.map(o => `AI Opt: ${o}`));
+      report.summary.violations.push(...aiResult.insights.filter(i => i.toLowerCase().includes('risk') || i.toLowerCase().includes('issue')).map(i => `AI Alert: ${i}`));
+    }
+  } catch (error) {
+    console.error('AI Analysis failed:', error);
+  }
+  
   return report;
 }
 
