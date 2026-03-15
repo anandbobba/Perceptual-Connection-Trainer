@@ -8,9 +8,10 @@ interface CanvasProps {
   onConnectionCreate: (from: string, to: string, fromPin?: string, toPin?: string) => void;
   onConnectionRemove: (id: string) => void;
   onNodeMove?: (nodeId: string, x: number, y: number) => void;
+  onNodeDelete?: (nodeId: string) => void;
 }
 
-export function Canvas({ scene, validationResults, onConnectionCreate, onConnectionRemove, onNodeMove }: CanvasProps) {
+export function Canvas({ scene, validationResults, onConnectionCreate, onConnectionRemove, onNodeMove, onNodeDelete }: CanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const rendererRef = useRef<CanvasRenderer | null>(null);
   const [isDrawing, setIsDrawing] = useState(false);
@@ -21,6 +22,8 @@ export function Canvas({ scene, validationResults, onConnectionCreate, onConnect
   const [tempLine, setTempLine] = useState<{ from: { x: number; y: number }; to: { x: number; y: number }; label?: string } | null>(null);
   const [hoveredPin, setHoveredPin] = useState<string | null>(null);
   const [hoveredConnection, setHoveredConnection] = useState<string | null>(null);
+  const [hoveredNode, setHoveredNode] = useState<string | null>(null);
+  const [selectedNode, setSelectedNode] = useState<string | null>(null);
   const [wireMode, setWireMode] = useState(false);
   const [lastPinClick, setLastPinClick] = useState<{ pinId: string; time: number } | null>(null);
 
@@ -36,14 +39,30 @@ export function Canvas({ scene, validationResults, onConnectionCreate, onConnect
       if (e.key === 'm' || e.key === 'M') {
         setWireMode(prev => !prev);
       }
+      // Delete selected node
+      if ((e.key === 'Delete' || e.key === 'Backspace') && selectedNode && onNodeDelete) {
+        e.preventDefault();
+        onNodeDelete(selectedNode);
+        setSelectedNode(null);
+      }
+    };
+    
+    // Handle window resize for responsiveness
+    const handleResize = () => {
+      const newRect = canvasRef.current?.parentElement?.getBoundingClientRect();
+      if (newRect && rendererRef.current) {
+        rendererRef.current.resize(newRect.width, newRect.height);
+      }
     };
     
     window.addEventListener('keydown', handleKeyPress);
+    window.addEventListener('resize', handleResize);
     return () => {
       if (rendererRef.current) rendererRef.current.stopAnimation();
       window.removeEventListener('keydown', handleKeyPress);
+      window.removeEventListener('resize', handleResize);
     };
-  }, []);
+  }, [selectedNode, onNodeDelete]);
 
   useEffect(() => {
     if (!rendererRef.current) return;
@@ -74,11 +93,29 @@ export function Canvas({ scene, validationResults, onConnectionCreate, onConnect
       return;
     }
     
-    // Check for pin click
+    // Check for node click first (PRIORITY: Allow dragging components)
+    const clickedNode = scene.nodes.find(n => {
+      const w = n.metadata._width || 60;
+      const h = n.metadata._height || 40;
+      return x >= n.x - w/2 && x <= n.x + w/2 && y >= n.y - h/2 && y <= n.y + h/2;
+    });
+    
+    // Check for pin click (more precise check)
     const clickedPin = scene.pins.find(p => Math.sqrt((p.x - x) ** 2 + (p.y - y) ** 2) < 10);
+    
+    // If clicked on a pin in wire mode, start drawing
+    if (clickedPin && wireMode) {
+      setIsDrawing(true);
+      const pinLabel = `${clickedPin.label}`;
+      setDrawStart({ x: clickedPin.x, y: clickedPin.y, nodeId: clickedPin.nodeId, pinId: clickedPin.id, pinLabel });
+      setTempLine({ from: { x: clickedPin.x, y: clickedPin.y }, to: { x, y }, label: pinLabel });
+      setSelectedNode(null);
+      return;
+    }
+    
+    // If clicked on pin (double-tap detection for wire drawing)
     if (clickedPin) {
       const now = Date.now();
-      // Double-tap detection (within 300ms)
       if (lastPinClick && lastPinClick.pinId === clickedPin.id && now - lastPinClick.time < 300) {
         // Double-tap detected - start wire drawing
         setIsDrawing(true);
@@ -86,34 +123,25 @@ export function Canvas({ scene, validationResults, onConnectionCreate, onConnect
         setDrawStart({ x: clickedPin.x, y: clickedPin.y, nodeId: clickedPin.nodeId, pinId: clickedPin.id, pinLabel });
         setTempLine({ from: { x: clickedPin.x, y: clickedPin.y }, to: { x, y }, label: pinLabel });
         setLastPinClick(null);
+        setSelectedNode(null);
         return;
       } else {
         setLastPinClick({ pinId: clickedPin.id, time: now });
       }
-      
-      // In wire mode, single click on pin starts drawing
-      if (wireMode) {
-        setIsDrawing(true);
-        const pinLabel = `${clickedPin.label}`;
-        setDrawStart({ x: clickedPin.x, y: clickedPin.y, nodeId: clickedPin.nodeId, pinId: clickedPin.id, pinLabel });
-        setTempLine({ from: { x: clickedPin.x, y: clickedPin.y }, to: { x, y }, label: pinLabel });
-        return;
-      }
     }
     
-    // Check for node click (dragging)
-    const clickedNode = scene.nodes.find(n => {
-      const w = n.metadata._width || 60;
-      const h = n.metadata._height || 40;
-      return x >= n.x - w/2 && x <= n.x + w/2 && y >= n.y - h/2 && y <= n.y + h/2;
-    });
-    
-    if (clickedNode && !wireMode) {
-      // Normal mode: Drag component
+    // If clicked on node body (not directly on pin) and not in wire mode, allow dragging
+    if (clickedNode && !wireMode && !clickedPin) {
       setIsDragging(true);
       setDraggedNode(clickedNode.id);
       setDragOffset({ x: x - clickedNode.x, y: y - clickedNode.y });
+      setSelectedNode(clickedNode.id);
       return;
+    }
+
+    // Deselect if clicking on empty canvas
+    if (!clickedNode && !clickedPin) {
+      setSelectedNode(null);
     }
   };
 
@@ -141,8 +169,16 @@ export function Canvas({ scene, validationResults, onConnectionCreate, onConnect
     const hovered = scene.pins.find(p => Math.sqrt((p.x - x) ** 2 + (p.y - y) ** 2) < 8);
     setHoveredPin(hovered?.id || null);
     
+    // Check for component hover (for cursor feedback)
+    const hoveredNodeObj = scene.nodes.find(n => {
+      const w = n.metadata._width || 60;
+      const h = n.metadata._height || 40;
+      return x >= n.x - w/2 && x <= n.x + w/2 && y >= n.y - h/2 && y <= n.y + h/2;
+    });
+    setHoveredNode(hoveredNodeObj?.id || null);
+    
     // Check for wire hover (for deletion)
-    if (!isDragging && !isDrawing) {
+    if (!isDragging && !isDrawing && !hoveredNodeObj) {
       const hoveredWire = scene.connections.find(conn => {
         const from = conn.metadata.fromPoint as { x: number; y: number };
         const to = conn.metadata.toPoint as { x: number; y: number };
@@ -218,11 +254,29 @@ export function Canvas({ scene, validationResults, onConnectionCreate, onConnect
     }
   };
 
-  const cursor = isDragging ? 'grabbing' : isDrawing ? 'crosshair' : wireMode ? 'crosshair' : hoveredConnection ? 'pointer' : hoveredPin ? 'pointer' : 'grab';
+  const cursor = isDragging ? 'grabbing' : 
+                 isDrawing ? 'crosshair' : 
+                 wireMode ? 'crosshair' : 
+                 hoveredConnection ? 'pointer' : 
+                 hoveredPin ? 'pointer' : 
+                 hoveredNode ? 'move' : 
+                 'default';
   
   return (
     <>
-      <canvas ref={canvasRef} onMouseDown={handleMouseDown} onMouseMove={handleMouseMove} onMouseUp={handleMouseUp} style={{ display: 'block', width: '100%', height: '100%', cursor }} />
+      <canvas 
+        ref={canvasRef} 
+        onMouseDown={handleMouseDown} 
+        onMouseMove={handleMouseMove} 
+        onMouseUp={handleMouseUp} 
+        style={{ 
+          display: 'block', 
+          width: '100%', 
+          height: '100%', 
+          cursor,
+          touchAction: 'none'
+        }} 
+      />
       {wireMode && (
         <div style={{
           position: 'absolute',
@@ -240,6 +294,25 @@ export function Canvas({ scene, validationResults, onConnectionCreate, onConnect
           zIndex: 1000
         }}>
           🔌 WIRE MODE - Click pins to connect
+        </div>
+      )}
+      {selectedNode && (
+        <div style={{
+          position: 'absolute',
+          bottom: '20px',
+          left: '50%',
+          transform: 'translateX(-50%)',
+          backgroundColor: 'rgba(0, 0, 0, 0.85)',
+          color: '#4ade80',
+          padding: '10px 20px',
+          borderRadius: '6px',
+          fontSize: '14px',
+          fontWeight: '500',
+          border: '2px solid #4ade80',
+          pointerEvents: 'none',
+          zIndex: 1000
+        }}>
+          ✓ Component selected • Press DEL to delete • Drag to move
         </div>
       )}
     </>

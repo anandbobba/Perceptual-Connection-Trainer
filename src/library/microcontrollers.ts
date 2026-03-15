@@ -7,7 +7,7 @@ export interface MicrocontrollerDef {
     label: string;
     type: 'power' | 'ground' | 'signal' | 'analog' | 'digital';
     voltage?: number;
-    position: 'left' | 'right' | 'top' | 'bottom';
+    position?: 'left' | 'right' | 'top' | 'bottom'; // Optional - only for reference
     offsetX: number;
     offsetY: number;
   }>;

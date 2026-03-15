@@ -58,6 +58,14 @@ export class SceneManager {
     this.notify();
   }
 
+  // Batch operation: add node with all its pins as a single undo/redo action
+  addNodeWithPins(node: Node, pins: Pin[]): void {
+    this.scene.nodes.push(node);
+    this.scene.pins.push(...pins);
+    this.saveState();
+    this.notify();
+  }
+
   updatePin(pinId: string, updates: Partial<Pin>): void {
     const idx = this.scene.pins.findIndex(p => p.id === pinId);
     if (idx !== -1) {

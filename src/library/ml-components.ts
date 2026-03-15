@@ -8,429 +8,365 @@ export interface MLComponentDef {
 }
 
 export const ML_COMPONENTS: Record<string, MLComponentDef> = {
-  // Datasets
-  'dataset-image': {
+  // Data Ingestion & Storage
+  'data-imageNet': {
     type: 'dataset',
-    label: 'Image Data',
-    width: 70,
-    height: 50,
-    metadata: { dataType: 'image', dimensions: 3 },
-    color: '#4a90e2'
+    label: 'ImageNet',
+    width: 90,
+    height: 60,
+    metadata: { samples: 14000000, classes: 1000, resolution: '224x224', format: 'JPEG' },
+    color: '#2563eb'
   },
-  'dataset-tabular': {
+  'data-coco': {
     type: 'dataset',
-    label: 'Tabular',
-    width: 70,
-    height: 50,
-    metadata: { dataType: 'tabular', dimensions: 2 },
-    color: '#5da5d5'
+    label: 'COCO Dataset',
+    width: 90,
+    height: 60,
+    metadata: { samples: 330000, objects: 1500000, categories: 80 },
+    color: '#1d4ed8'
   },
-  'dataset-sequential': {
+  'data-csv': {
     type: 'dataset',
-    label: 'Sequential',
-    width: 70,
-    height: 50,
-    metadata: { dataType: 'sequential', timeSteps: true },
-    color: '#6bb5e8'
+    label: 'CSV Import',
+    width: 90,
+    height: 60,
+    metadata: { format: 'tabular', encoding: 'UTF-8', delimiter: ',' },
+    color: '#1e40af'
   },
-  'dataset-text': {
+  'data-timeseries': {
     type: 'dataset',
-    label: 'Text Data',
-    width: 70,
-    height: 50,
-    metadata: { dataType: 'text', vocabulary: true },
-    color: '#78c5fb'
+    label: 'Time Series',
+    width: 90,
+    height: 60,
+    metadata: { temporal: true, frequency: 'variable', seasonality: 'auto-detect' },
+    color: '#1e3a8a'
   },
-  'dataset-audio': {
+  'data-nlp-corpus': {
     type: 'dataset',
-    label: 'Audio',
-    width: 70,
-    height: 50,
-    metadata: { dataType: 'audio', sampleRate: 44100 },
-    color: '#85d5ff'
+    label: 'Text Corpus',
+    width: 90,
+    height: 60,
+    metadata: { tokens: 'variable', vocabulary: 50000, embedding: 'Word2Vec/BERT' },
+    color: '#172554'
   },
-  'dataset-video': {
+  'data-audio-wav': {
     type: 'dataset',
-    label: 'Video',
-    width: 70,
-    height: 50,
-    metadata: { dataType: 'video', fps: 30 },
-    color: '#3a7bc8'
+    label: 'Audio WAV',
+    width: 90,
+    height: 60,
+    metadata: { sampleRate: 44100, bitDepth: 16, channels: 2 },
+    color: '#3b82f6'
   },
 
-  // Neural Network Architectures
-  'model-cnn': {
+  // Deep Learning Architectures
+  'model-resnet50': {
     type: 'model',
-    label: 'CNN',
-    width: 70,
-    height: 55,
-    metadata: { architecture: 'cnn', task: 'classification', spatialInvariance: true },
-    color: '#e94b3c'
+    label: 'ResNet-50',
+    width: 100,
+    height: 65,
+    metadata: { layers: 50, params: '25.6M', input: '224x224x3', architecture: 'residual' },
+    color: '#dc2626'
   },
-  'model-rnn': {
+  'model-vgg16': {
     type: 'model',
-    label: 'RNN',
-    width: 70,
-    height: 55,
-    metadata: { architecture: 'rnn', task: 'classification', sequential: true },
-    color: '#d63c2d'
+    label: 'VGG-16',
+    width: 100,
+    height: 65,
+    metadata: { layers: 16, params: '138M', input: '224x224x3', convLayers: 13 },
+    color: '#b91c1c'
+  },
+  'model-bert-base': {
+    type: 'model',
+    label: 'BERT Base',
+    width: 100,
+    height: 65,
+    metadata: { encoders: 12, hiddenSize: 768, params: '110M', attention: 'multi-head' },
+    color: '#991b1b'
+  },
+  'model-gpt3': {
+    type: 'model',
+    label: 'GPT-3',
+    width: 100,
+    height: 65,
+    metadata: { layers: 96, params: '175B', contextWindow: 2048, tokenizer: 'BPE' },
+    color: '#7f1d1d'
+  },
+  'model-yolov8': {
+    type: 'model',
+    label: 'YOLOv8',
+    width: 100,
+    height: 65,
+    metadata: { task: 'object-detection', realtime: true, mAP: '53.9', backbone: 'CSPDarknet' },
+    color: '#ef4444'
+  },
+  'model-efficientnet': {
+    type: 'model',
+    label: 'EfficientNet',
+    width: 100,
+    height: 65,
+    metadata: { params: '5.3M', compound: true, accuracy: '84.3%', efficient: true },
+    color: '#f97316'
+  },
+  'model-unet': {
+    type: 'model',
+    label: 'U-Net',
+    width: 100,
+    height: 65,
+    metadata: { task: 'segmentation', encoder: 'contracting', decoder: 'expanding' },
+    color: '#ea580c'
   },
   'model-lstm': {
     type: 'model',
     label: 'LSTM',
-    width: 70,
-    height: 55,
-    metadata: { architecture: 'lstm', task: 'classification', sequential: true, memory: true },
-    color: '#c32d1e'
+    width: 100,
+    height: 65,
+    metadata: { recurrent: true, gates: 3, forgetGate: true, cellState: true },
+    color: '#c2410c'
   },
   'model-gru': {
     type: 'model',
     label: 'GRU',
-    width: 70,
-    height: 55,
-    metadata: { architecture: 'gru', task: 'classification', sequential: true },
-    color: '#b01e0f'
-  },
-  'model-transformer': {
-    type: 'model',
-    label: 'Transformer',
-    width: 80,
-    height: 55,
-    metadata: { architecture: 'transformer', task: 'classification', attention: true },
-    color: '#ff5c4c'
-  },
-  'model-mlp-regression': {
-    type: 'model',
-    label: 'MLP Reg',
-    width: 70,
-    height: 55,
-    metadata: { architecture: 'mlp', task: 'regression', fullyConnected: true },
-    color: '#ff6b5c'
-  },
-  'model-mlp-classification': {
-    type: 'model',
-    label: 'MLP Class',
-    width: 75,
-    height: 55,
-    metadata: { architecture: 'mlp', task: 'classification', fullyConnected: true },
-    color: '#ff7a6c'
-  },
-  'model-resnet': {
-    type: 'model',
-    label: 'ResNet',
-    width: 70,
-    height: 55,
-    metadata: { architecture: 'resnet', task: 'classification', residualConnections: true },
-    color: '#e63c2c'
-  },
-  'model-vgg': {
-    type: 'model',
-    label: 'VGG',
-    width: 70,
-    height: 55,
-    metadata: { architecture: 'vgg', task: 'classification', deep: true },
-    color: '#d32c1c'
-  },
-  'model-autoencoder': {
-    type: 'model',
-    label: 'Autoencoder',
-    width: 80,
-    height: 55,
-    metadata: { architecture: 'autoencoder', task: 'reconstruction', unsupervised: true },
-    color: '#c01c0c'
-  },
-  'model-gan': {
-    type: 'model',
-    label: 'GAN',
-    width: 70,
-    height: 55,
-    metadata: { architecture: 'gan', task: 'generation', adversarial: true },
-    color: '#ad0c00'
-  },
-  'model-vae': {
-    type: 'model',
-    label: 'VAE',
-    width: 70,
-    height: 55,
-    metadata: { architecture: 'vae', task: 'generation', probabilistic: true },
-    color: '#ff8c7c'
+    width: 100,
+    height: 65,
+    metadata: { recurrent: true, gates: 2, resetGate: true, updateGate: true },
+    color: '#9a3412'
   },
 
-  // Layers
+  // Neural Network Layers
   'layer-conv2d': {
     type: 'layer',
     label: 'Conv2D',
-    width: 65,
-    height: 45,
-    metadata: { layerType: 'conv2d', trainable: true },
-    color: '#1abc9c'
+    width: 95,
+    height: 55,
+    metadata: { kernelSize: '3x3', stride: 1, padding: 'same', activation: 'ReLU' },
+    color: '#059669'
   },
-  'layer-maxpool': {
+  'layer-maxpool2d': {
     type: 'layer',
-    label: 'MaxPool',
-    width: 65,
-    height: 45,
-    metadata: { layerType: 'maxpool', trainable: false },
-    color: '#16a085'
+    label: 'MaxPool2D',
+    width: 95,
+    height: 55,
+    metadata: { poolSize: '2x2', stride: 2, downsampling: true },
+    color: '#047857'
   },
   'layer-dense': {
     type: 'layer',
-    label: 'Dense',
-    width: 65,
-    height: 45,
-    metadata: { layerType: 'dense', trainable: true },
-    color: '#0e9c81'
+    label: 'Dense (FC)',
+    width: 95,
+    height: 55,
+    metadata: { units: 128, activation: 'ReLU', fullyConnected: true },
+    color: '#065f46'
   },
   'layer-dropout': {
     type: 'layer',
     label: 'Dropout',
-    width: 65,
-    height: 45,
-    metadata: { layerType: 'dropout', trainable: false, regularization: true },
-    color: '#0a8c71'
+    width: 95,
+    height: 55,
+    metadata: { rate: 0.5, regularization: true, training: 'only' },
+    color: '#064e3b'
   },
   'layer-batchnorm': {
     type: 'layer',
     label: 'BatchNorm',
-    width: 70,
-    height: 45,
-    metadata: { layerType: 'batchnorm', trainable: true, normalization: true },
-    color: '#067c61'
-  },
-  'layer-flatten': {
-    type: 'layer',
-    label: 'Flatten',
-    width: 65,
-    height: 45,
-    metadata: { layerType: 'flatten', trainable: false },
-    color: '#1acca9'
-  },
-  'layer-embedding': {
-    type: 'layer',
-    label: 'Embedding',
-    width: 70,
-    height: 45,
-    metadata: { layerType: 'embedding', trainable: true, forText: true },
-    color: '#2adcb9'
+    width: 95,
+    height: 55,
+    metadata: { momentum: 0.99, epsilon: 0.001, normalization: true },
+    color: '#10b981'
   },
   'layer-attention': {
     type: 'layer',
     label: 'Attention',
-    width: 70,
-    height: 45,
-    metadata: { layerType: 'attention', trainable: true },
-    color: '#3aecc9'
+    width: 95,
+    height: 55,
+    metadata: { heads: 8, queryKeyValue: true, scaledDotProduct: true },
+    color: '#14532d'
   },
-
-  // Loss Functions
-  'loss-crossentropy': {
-    type: 'loss',
-    label: 'CrossEntropy',
-    width: 75,
-    height: 50,
-    metadata: { lossType: 'crossentropy', forTask: 'classification' },
-    color: '#f39c12'
-  },
-  'loss-bce': {
-    type: 'loss',
-    label: 'BCE',
-    width: 65,
-    height: 50,
-    metadata: { lossType: 'bce', forTask: 'binary-classification' },
-    color: '#e08e0b'
-  },
-  'loss-mse': {
-    type: 'loss',
-    label: 'MSE',
-    width: 65,
-    height: 50,
-    metadata: { lossType: 'mse', forTask: 'regression' },
-    color: '#d68910'
-  },
-  'loss-mae': {
-    type: 'loss',
-    label: 'MAE',
-    width: 65,
-    height: 50,
-    metadata: { lossType: 'mae', forTask: 'regression' },
-    color: '#c77a09'
-  },
-  'loss-huber': {
-    type: 'loss',
-    label: 'Huber',
-    width: 65,
-    height: 50,
-    metadata: { lossType: 'huber', forTask: 'regression', robust: true },
-    color: '#b86b08'
-  },
-  'loss-ctc': {
-    type: 'loss',
-    label: 'CTC',
-    width: 65,
-    height: 50,
-    metadata: { lossType: 'ctc', forTask: 'sequence-to-sequence' },
-    color: '#f4a522'
-  },
-  'loss-triplet': {
-    type: 'loss',
-    label: 'Triplet',
-    width: 65,
-    height: 50,
-    metadata: { lossType: 'triplet', forTask: 'metric-learning' },
-    color: '#f5b032'
+  'layer-embedding': {
+    type: 'layer',
+    label: 'Embedding',
+    width: 95,
+    height: 55,
+    metadata: { vocabSize: 50000, embeddingDim: 300, word2vec: true },
+    color: '#22c55e'
   },
 
   // Optimizers
-  'optimizer-sgd': {
-    type: 'optimizer',
-    label: 'SGD',
-    width: 65,
-    height: 45,
-    metadata: { optimizerType: 'sgd', learningRate: 0.01 },
-    color: '#9b59b6'
-  },
   'optimizer-adam': {
     type: 'optimizer',
     label: 'Adam',
-    width: 65,
-    height: 45,
-    metadata: { optimizerType: 'adam', learningRate: 0.001, adaptive: true },
-    color: '#8e44ad'
+    width: 95,
+    height: 55,
+    metadata: { learningRate: 0.001, beta1: 0.9, beta2: 0.999, adaptive: true },
+    color: '#f59e0b'
+  },
+  'optimizer-sgd': {
+    type: 'optimizer',
+    label: 'SGD',
+    width: 95,
+    height: 55,
+    metadata: { learningRate: 0.01, momentum: 0.9, nesterov: false },
+    color: '#d97706'
   },
   'optimizer-rmsprop': {
     type: 'optimizer',
-    label: 'RMSProp',
-    width: 70,
-    height: 45,
-    metadata: { optimizerType: 'rmsprop', learningRate: 0.001, adaptive: true },
-    color: '#7d3c98'
-  },
-  'optimizer-adagrad': {
-    type: 'optimizer',
-    label: 'AdaGrad',
-    width: 70,
-    height: 45,
-    metadata: { optimizerType: 'adagrad', learningRate: 0.01, adaptive: true },
-    color: '#6c3483'
-  },
-  'optimizer-adamw': {
-    type: 'optimizer',
-    label: 'AdamW',
-    width: 65,
-    height: 45,
-    metadata: { optimizerType: 'adamw', learningRate: 0.001, weightDecay: true },
-    color: '#5b2c6f'
+    label: 'RMSprop',
+    width: 95,
+    height: 55,
+    metadata: { learningRate: 0.001, rho: 0.9, decay: 0, centered: false },
+    color: '#b45309'
   },
 
-  // Regularization
-  'regularization-l1': {
-    type: 'regularization',
-    label: 'L1 Reg',
-    width: 65,
-    height: 45,
-    metadata: { regType: 'l1', lambda: 0.01 },
-    color: '#34495e'
+  // Loss Functions
+  'loss-categorical-crossentropy': {
+    type: 'loss',
+    label: 'CCE Loss',
+    width: 95,
+    height: 55,
+    metadata: { multiclass: true, softmax: true, logits: false },
+    color: '#ef4444'
   },
-  'regularization-l2': {
-    type: 'regularization',
-    label: 'L2 Reg',
-    width: 65,
-    height: 45,
-    metadata: { regType: 'l2', lambda: 0.01 },
-    color: '#2c3e50'
+  'loss-binary-crossentropy': {
+    type: 'loss',
+    label: 'BCE Loss',
+    width: 95,
+    height: 55,
+    metadata: { binary: true, sigmoid: true, logits: false },
+    color: '#dc2626'
+  },
+  'loss-mse': {
+    type: 'loss',
+    label: 'MSE Loss',
+    width: 95,
+    height: 55,
+    metadata: { regression: true, squaredError: true, l2: true },
+    color: '#b91c1c'
+  },
+  'loss-huber': {
+    type: 'loss',
+    label: 'Huber Loss',
+    width: 95,
+    height: 55,
+    metadata: { regression: true, robust: true, delta: 1.0 },
+    color: '#991b1b'
   },
 
-  // Preprocessing
-  'preprocessing-normalize': {
+  // Data Preprocessing & Augmentation
+  'preprocess-normalize': {
     type: 'preprocessing',
     label: 'Normalize',
-    width: 70,
-    height: 45,
-    metadata: { method: 'standardization' },
-    color: '#16a085'
+    width: 95,
+    height: 55,
+    metadata: { mean: 0, std: 1, minMax: '0-1', zScore: true },
+    color: '#8b5cf6'
   },
-  'preprocessing-augment': {
+  'preprocess-augment-image': {
     type: 'preprocessing',
-    label: 'Augment',
-    width: 70,
-    height: 45,
-    metadata: { method: 'augmentation', forImages: true },
-    color: '#1abc9c'
+    label: 'Image Augment',
+    width: 95,
+    height: 55,
+    metadata: { rotation: 30, flip: true, zoom: 0.2, brightness: 0.2 },
+    color: '#7c3aed'
   },
-  'preprocessing-tokenize': {
+  'preprocess-tokenizer': {
     type: 'preprocessing',
-    label: 'Tokenize',
-    width: 70,
-    height: 45,
-    metadata: { method: 'tokenization', forText: true },
-    color: '#27ae60'
+    label: 'Tokenizer',
+    width: 95,
+    height: 55,
+    metadata: { vocabSize: 50000, method: 'WordPiece/BPE', padding: true },
+    color: '#6d28d9'
+  },
+  'preprocess-feature-scale': {
+    type: 'preprocessing',
+    label: 'Feature Scale',
+    width: 95,
+    height: 55,
+    metadata: { method: 'StandardScaler', robust: false, range: '0-1' },
+    color: '#5b21b6'
   },
 
-  // Activation Functions
-  'activation-relu': {
-    type: 'activation',
-    label: 'ReLU',
-    width: 60,
-    height: 40,
-    metadata: { activationType: 'relu' },
-    color: '#e74c3c'
-  },
-  'activation-sigmoid': {
-    type: 'activation',
-    label: 'Sigmoid',
-    width: 65,
-    height: 40,
-    metadata: { activationType: 'sigmoid' },
-    color: '#c0392b'
-  },
-  'activation-tanh': {
-    type: 'activation',
-    label: 'Tanh',
-    width: 60,
-    height: 40,
-    metadata: { activationType: 'tanh' },
-    color: '#a93226'
-  },
-  'activation-softmax': {
-    type: 'activation',
-    label: 'Softmax',
-    width: 70,
-    height: 40,
-    metadata: { activationType: 'softmax' },
-    color: '#922b21'
-  },
-
-  // Metrics
+  // Evaluation & Metrics
   'metric-accuracy': {
     type: 'metric',
     label: 'Accuracy',
-    width: 70,
-    height: 40,
-    metadata: { metricType: 'accuracy' },
-    color: '#3498db'
+    width: 95,
+    height: 55,
+    metadata: { classification: true, topK: 1, percentage: true },
+    color: '#06b6d4'
   },
-  'metric-precision': {
+  'metric-precision-recall': {
     type: 'metric',
-    label: 'Precision',
-    width: 70,
-    height: 40,
-    metadata: { metricType: 'precision' },
-    color: '#2980b9'
+    label: 'Precision/Recall',
+    width: 95,
+    height: 55,
+    metadata: { f1Score: true, confusion: true, multiclass: true },
+    color: '#0891b2'
   },
-  'metric-recall': {
+  'metric-auc-roc': {
     type: 'metric',
-    label: 'Recall',
-    width: 70,
-    height: 40,
-    metadata: { metricType: 'recall' },
-    color: '#2471a3'
+    label: 'AUC-ROC',
+    width: 95,
+    height: 55,
+    metadata: { binary: true, curve: 'ROC', threshold: 0.5 },
+    color: '#0e7490'
   },
-  'metric-f1': {
+  'metric-iou': {
     type: 'metric',
-    label: 'F1 Score',
-    width: 70,
-    height: 40,
-    metadata: { metricType: 'f1' },
-    color: '#1f618d'
+    label: 'IoU / mAP',
+    width: 95,
+    height: 55,
+    metadata: { objectDetection: true, segmentation: true, jaccard: true },
+    color: '#155e75'
+  },
+
+  // Training Components
+  'train-early-stopping': {
+    type: 'training',
+    label: 'Early Stop',
+    width: 95,
+    height: 55,
+    metadata: { patience: 10, monitor: 'val_loss', restore: true },
+    color: '#84cc16'
+  },
+  'train-checkpoint': {
+    type: 'training',
+    label: 'Checkpoint',
+    width: 95,
+    height: 55,
+    metadata: { saveFrequency: 'epoch', format: 'HDF5/PyTorch', bestOnly: true },
+    color: '#65a30d'
+  },
+  'train-learning-rate-schedule': {
+    type: 'training',
+    label: 'LR Schedule',
+    width: 95,
+    height: 55,
+    metadata: { method: 'cosine/step', warmup: true, decay: 0.1 },
+    color: '#4d7c0f'
+  },
+
+  // Deployment & Inference
+  'deploy-tensorrt': {
+    type: 'deployment',
+    label: 'TensorRT',
+    width: 95,
+    height: 55,
+    metadata: { inference: true, nvidia: true, optimization: 'FP16/INT8' },
+    color: '#78350f'
+  },
+  'deploy-onnx': {
+    type: 'deployment',
+    label: 'ONNX Export',
+    width: 95,
+    height: 55,
+    metadata: { interoperable: true, framework: 'agnostic', quantization: true },
+    color: '#92400e'
+  },
+  'deploy-tflite': {
+    type: 'deployment',
+    label: 'TFLite',
+    width: 95,
+    height: 55,
+    metadata: { mobile: true, edge: true, quantization: 'INT8', size: 'optimized' },
+    color: '#a16207'
   }
 };

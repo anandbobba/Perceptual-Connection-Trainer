@@ -85,13 +85,18 @@ export const ledRequiresResistor: ValidationRule = (connection, scene) => {
   const ledNode = fromNode.type.startsWith('led') ? fromNode : (toNode.type.startsWith('led') ? toNode : null);
   if (!ledNode) return null;
 
+  console.log(`[LED CHECK] Found LED node: ${ledNode.type}`);
+
   // Get all connections to/from this LED
   const ledConnections = scene.connections.filter(
     c => c.fromNodeId === ledNode.id || c.toNodeId === ledNode.id
   );
 
+  console.log(`[LED CHECK] LED has ${ledConnections.length} connections`);
+
   if (ledConnections.length < 2) {
     // LED needs at least 2 connections (anode and cathode paths)
+    console.log(`[LED CHECK] ❌ LED needs 2+ connections`);
     return {
       connectionId: connection.id,
       isValid: false,
@@ -106,24 +111,33 @@ export const ledRequiresResistor: ValidationRule = (connection, scene) => {
     
     if (!otherNode) return false;
     
+    console.log(`[LED CHECK] Checking connection to: ${otherNode.type}`);
+    
     // Check if connected to MCU power pin
     if (otherNode.type.includes('arduino') || otherNode.type.includes('esp') || otherNode.type.includes('pico')) {
-      const pinId = c.fromNodeId === ledNode.id ? c.fromPinId : c.toPinId;
+      const pinId = c.fromNodeId === ledNode.id ? c.toPinId : c.fromPinId;
       const pin = pinId ? findPin(pinId, scene) : null;
+      console.log(`[LED CHECK] MCU pin type: ${pin?.type}, label: ${pin?.label}`);
       return pin?.type === 'power';
     }
     return false;
   });
+
+  console.log(`[LED CHECK] Has power connection: ${hasPowerConnection}`);
 
   if (hasPowerConnection) {
     // LED connected to power - MUST have resistor in series
     const hasResistorInPath = ledConnections.some(c => {
       const otherNodeId = c.fromNodeId === ledNode.id ? c.toNodeId : c.fromNodeId;
       const otherNode = scene.nodes.find(n => n.id === otherNodeId);
+      console.log(`[LED CHECK] Checking for resistor, found: ${otherNode?.type}`);
       return otherNode?.type === 'resistor';
     });
 
+    console.log(`[LED CHECK] Has resistor in path: ${hasResistorInPath}`);
+
     if (!hasResistorInPath) {
+      console.log(`[LED CHECK] ❌ CRITICAL: LED without resistor!`);
       return {
         connectionId: connection.id,
         isValid: false,

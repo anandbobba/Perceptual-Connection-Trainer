@@ -1,35 +1,41 @@
 import { useState } from 'react';
 import { Domain } from '../types';
 import { MICROCONTROLLERS } from '../library/microcontrollers';
+import { ADVANCED_MICROCONTROLLERS } from '../library/advanced-microcontrollers';
 import { PHYSICAL_COMPONENTS } from '../library/components';
+import { PROFESSIONAL_SENSORS } from '../library/professional-sensors';
 import { ML_COMPONENTS } from '../library/ml-components';
-import { CIRCUIT_EXAMPLES } from '../examples/circuit-examples';
 
 interface ToolbarProps {
   domain: Domain;
   onDomainChange: (domain: Domain) => void;
   onAddNode: (type: string, metadata?: any, def?: any) => void;
   onClear: () => void;
-  onLoadExample?: (exampleId: string) => void;
 }
 
-export function Toolbar({ domain, onDomainChange, onAddNode, onClear, onLoadExample }: ToolbarProps) {
+export function Toolbar({ domain, onDomainChange, onAddNode, onClear }: ToolbarProps) {
   const [activeCategory, setActiveCategory] = useState<string>('microcontrollers');
-  const [showExamples, setShowExamples] = useState(false);
+
+  // Merge all microcontrollers and sensors
+  const ALL_MCUS = { ...MICROCONTROLLERS, ...ADVANCED_MICROCONTROLLERS };
+  const ALL_SENSORS = { 
+    ...Object.fromEntries(Object.entries(PHYSICAL_COMPONENTS).filter(([, v]) => v.type === 'sensor')),
+    ...PROFESSIONAL_SENSORS 
+  };
 
   const physicalCategories = {
-    microcontrollers: { label: 'MCUs', items: MICROCONTROLLERS },
-    leds: { label: 'LEDs', items: Object.fromEntries(Object.entries(PHYSICAL_COMPONENTS).filter(([k]) => k.includes('led'))) },
+    microcontrollers: { label: 'Microcontrollers', items: ALL_MCUS },
+    sensors: { label: 'Professional Sensors', items: ALL_SENSORS },
+    leds: { label: 'Light Emitting Diodes', items: Object.fromEntries(Object.entries(PHYSICAL_COMPONENTS).filter(([k]) => k.includes('led'))) },
     resistors: { label: 'Resistors', items: Object.fromEntries(Object.entries(PHYSICAL_COMPONENTS).filter(([k]) => k.includes('resistor'))) },
     capacitors: { label: 'Capacitors', items: Object.fromEntries(Object.entries(PHYSICAL_COMPONENTS).filter(([k]) => k.includes('capacitor'))) },
     transistors: { label: 'Transistors', items: Object.fromEntries(Object.entries(PHYSICAL_COMPONENTS).filter(([k]) => k.includes('transistor') || k.includes('mosfet'))) },
-    sensors: { label: 'Sensors', items: Object.fromEntries(Object.entries(PHYSICAL_COMPONENTS).filter(([, v]) => v.type === 'sensor')) },
     displays: { label: 'Displays', items: Object.fromEntries(Object.entries(PHYSICAL_COMPONENTS).filter(([, v]) => v.type === 'display')) },
-    motors: { label: 'Motors', items: Object.fromEntries(Object.entries(PHYSICAL_COMPONENTS).filter(([, v]) => v.type === 'motor')) },
-    buttons: { label: 'Input', items: Object.fromEntries(Object.entries(PHYSICAL_COMPONENTS).filter(([, v]) => v.type === 'button' || v.type === 'switch' || v.type === 'potentiometer')) },
-    wireless: { label: 'Wireless', items: Object.fromEntries(Object.entries(PHYSICAL_COMPONENTS).filter(([, v]) => v.type === 'wireless')) },
-    power: { label: 'Power', items: Object.fromEntries(Object.entries(PHYSICAL_COMPONENTS).filter(([, v]) => v.type === 'power-source' || v.type === 'regulator')) },
-    other: { label: 'Other', items: Object.fromEntries(Object.entries(PHYSICAL_COMPONENTS).filter(([, v]) => v.type === 'diode' || v.type === 'audio' || v.type === 'relay')) },
+    motors: { label: 'Motors & Actuators', items: Object.fromEntries(Object.entries(PHYSICAL_COMPONENTS).filter(([, v]) => v.type === 'motor')) },
+    buttons: { label: 'Input Devices', items: Object.fromEntries(Object.entries(PHYSICAL_COMPONENTS).filter(([, v]) => v.type === 'button' || v.type === 'switch' || v.type === 'potentiometer')) },
+    wireless: { label: 'Wireless Modules', items: Object.fromEntries(Object.entries(PHYSICAL_COMPONENTS).filter(([, v]) => v.type === 'wireless')) },
+    power: { label: 'Power Supply', items: Object.fromEntries(Object.entries(PHYSICAL_COMPONENTS).filter(([, v]) => v.type === 'power-source' || v.type === 'regulator')) },
+    other: { label: 'Other Components', items: Object.fromEntries(Object.entries(PHYSICAL_COMPONENTS).filter(([, v]) => v.type === 'diode' || v.type === 'audio' || v.type === 'relay')) },
   };
 
   const logicalCategories = {
@@ -48,179 +54,227 @@ export function Toolbar({ domain, onDomainChange, onAddNode, onClear, onLoadExam
 
   return (
     <div style={{
-      backgroundColor: '#1e1e1e',
-      color: '#fff',
-      borderBottom: '1px solid #333'
+      background: 'linear-gradient(135deg, #1a1d29 0%, #0f1117 100%)',
+      color: '#e8eaed',
+      borderBottom: '1px solid rgba(99, 102, 241, 0.2)',
+      boxShadow: '0 4px 16px rgba(0, 0, 0, 0.4)'
     }}>
       {/* Top Bar */}
       <div style={{
-        padding: '8px 12px',
+        padding: '12px 20px',
         display: 'flex',
-        gap: '12px',
+        gap: '16px',
         alignItems: 'center',
-        borderBottom: '1px solid #333'
+        borderBottom: '1px solid rgba(255, 255, 255, 0.05)',
+        background: 'rgba(0, 0, 0, 0.2)'
       }}>
+        {/* Domain Selector */}
         <select
           value={domain}
           onChange={(e) => {
             onDomainChange(e.target.value as Domain);
             setActiveCategory(e.target.value === 'physical' ? 'microcontrollers' : 'datasets');
           }}
-          style={{ padding: '6px 10px', backgroundColor: '#333', color: '#fff', border: 'none', borderRadius: '3px', fontSize: '13px' }}
+          style={{
+            padding: '8px 16px',
+            background: 'linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)',
+            color: '#fff',
+            border: '1px solid rgba(255, 255, 255, 0.1)',
+            borderRadius: '6px',
+            fontSize: '14px',
+            fontWeight: '600',
+            cursor: 'pointer',
+            boxShadow: '0 2px 8px rgba(99, 102, 241, 0.3)',
+            transition: 'all 0.2s'
+          }}
         >
-          <option value="physical">⚡ Physical Circuits</option>
-          <option value="logical">🧠 ML Pipeline</option>
+          <option value="physical">Physical Circuits</option>
+          <option value="logical">Machine Learning Pipeline</option>
         </select>
 
         {domain === 'physical' && (
           <>
-            <div style={{ fontSize: '11px', color: '#888', marginLeft: '12px', display: 'flex', gap: '12px' }}>
-              <span>
-                <kbd style={{ padding: '2px 6px', backgroundColor: '#333', borderRadius: '2px', fontWeight: 'bold' }}>M</kbd> Wire Mode
+            <div style={{ 
+              fontSize: '12px', 
+              color: '#9ca3af', 
+              marginLeft: '16px', 
+              display: 'flex', 
+              gap: '20px',
+              alignItems: 'center'
+            }}>
+              <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <kbd style={{ 
+                  padding: '3px 8px', 
+                  background: 'rgba(99, 102, 241, 0.15)',
+                  border: '1px solid rgba(99, 102, 241, 0.3)',
+                  borderRadius: '4px', 
+                  fontWeight: '700',
+                  color: '#a5b4fc',
+                  fontSize: '11px'
+                }}>M</kbd>
+                <span>Wire Mode</span>
               </span>
-              <span style={{ color: '#666' }}>|</span>
+              <span style={{ color: 'rgba(255, 255, 255, 0.1)' }}>│</span>
               <span>Double-tap pin to connect</span>
-              <span style={{ color: '#666' }}>|</span>
+              <span style={{ color: 'rgba(255, 255, 255, 0.1)' }}>│</span>
               <span>Click wire to delete</span>
-              <span style={{ color: '#666' }}>|</span>
-              <span>
-                <kbd style={{ padding: '2px 6px', backgroundColor: '#333', borderRadius: '2px', fontWeight: 'bold' }}>Ctrl+Z</kbd> Undo
+              <span style={{ color: 'rgba(255, 255, 255, 0.1)' }}>│</span>
+              <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <kbd style={{ 
+                  padding: '3px 8px', 
+                  background: 'rgba(99, 102, 241, 0.15)',
+                  border: '1px solid rgba(99, 102, 241, 0.3)',
+                  borderRadius: '4px', 
+                  fontWeight: '700',
+                  color: '#a5b4fc',
+                  fontSize: '11px'
+                }}>Ctrl+Z</kbd>
+                <span>Undo</span>
               </span>
             </div>
           </>
         )}
 
-        <div style={{ marginLeft: 'auto', position: 'relative' }}>
+        <div style={{ marginLeft: 'auto', display: 'flex', gap: '12px', alignItems: 'center' }}>
           <button
-            onClick={() => setShowExamples(!showExamples)}
+            onClick={onClear}
             style={{
-              padding: '6px 16px',
-              backgroundColor: '#6366f1',
+              padding: '8px 18px',
+              background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
               color: '#fff',
-              border: 'none',
-              borderRadius: '3px',
-              fontSize: '13px',
-              fontWeight: 'bold',
+              border: '1px solid rgba(255, 255, 255, 0.1)',
+              borderRadius: '6px',
               cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px'
+              fontSize: '13px',
+              fontWeight: '600',
+              boxShadow: '0 2px 8px rgba(239, 68, 68, 0.3)',
+              transition: 'all 0.2s'
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.transform = 'translateY(-1px)';
+              e.currentTarget.style.boxShadow = '0 4px 12px rgba(239, 68, 68, 0.4)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.transform = 'translateY(0)';
+              e.currentTarget.style.boxShadow = '0 2px 8px rgba(239, 68, 68, 0.3)';
             }}
           >
-            📚 Examples
+            Clear All
           </button>
-          
-          {showExamples && (
-            <div style={{
-              position: 'absolute',
-              top: '100%',
-              right: 0,
-              marginTop: '8px',
-              backgroundColor: '#2d2d2d',
-              border: '1px solid #444',
-              borderRadius: '6px',
-              padding: '8px',
-              minWidth: '250px',
-              maxHeight: '400px',
-              overflowY: 'auto',
-              zIndex: 1000,
-              boxShadow: '0 4px 12px rgba(0, 0, 0, 0.5)'
-            }}>
-              <div style={{ padding: '8px', fontSize: '12px', color: '#aaa', borderBottom: '1px solid #444', marginBottom: '8px' }}>
-                Click to load example circuit
-              </div>
-              {Object.entries(CIRCUIT_EXAMPLES)
-                .filter(([, ex]) => ex.domain === domain)
-                .map(([id, example]) => (
-                  <button
-                    key={id}
-                    onClick={() => {
-                      if (onLoadExample) onLoadExample(id);
-                      setShowExamples(false);
-                    }}
-                    style={{
-                      width: '100%',
-                      padding: '10px',
-                      marginBottom: '6px',
-                      backgroundColor: '#3a3a3a',
-                      color: '#fff',
-                      border: '1px solid #555',
-                      borderRadius: '4px',
-                      cursor: 'pointer',
-                      textAlign: 'left',
-                      transition: 'all 0.2s'
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.backgroundColor = '#4a4a4a';
-                      e.currentTarget.style.borderColor = '#6366f1';
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.backgroundColor = '#3a3a3a';
-                      e.currentTarget.style.borderColor = '#555';
-                    }}
-                  >
-                    <div style={{ fontSize: '14px', fontWeight: 'bold', marginBottom: '4px' }}>
-                      {example.name}
-                    </div>
-                    <div style={{ fontSize: '11px', color: '#aaa' }}>
-                      {example.description}
-                    </div>
-                  </button>
-                ))}
-            </div>
-          )}
         </div>
-
-        <div style={{ borderLeft: '1px solid #555', height: '28px', margin: '0 8px' }} />
-
-        {/* Category Tabs */}
-        <div style={{ display: 'flex', gap: '6px', flex: 1, overflowX: 'auto' }}>
-          {Object.entries(categories).map(([key, { label }]) => (
-            <button
-              key={key}
-              onClick={() => setActiveCategory(key)}
-              style={{
-                ...tabStyle,
-                backgroundColor: activeCategory === key ? '#0e639c' : '#2d2d30',
-                borderBottom: activeCategory === key ? '2px solid #0e639c' : 'none'
-              }}
-            >
-              {label}
-            </button>
-          ))}
-        </div>
-
-        <button onClick={onClear} style={{ ...buttonStyle, backgroundColor: '#c41e3a', padding: '6px 12px' }}>Clear All</button>
       </div>
 
-      {/* Component Grid */}
+      {/* Category Tabs */}
       <div style={{
-        padding: '12px',
+        display: 'flex',
+        gap: '4px',
+        padding: '12px 20px',
+        overflowX: 'auto',
+        background: 'rgba(0, 0, 0, 0.15)',
+        backdropFilter: 'blur(10px)'
+      }}>
+        {Object.entries(categories).map(([key, { label }]) => (
+          <button
+            key={key}
+            onClick={() => setActiveCategory(key)}
+            style={{
+              padding: '8px 16px',
+              background: activeCategory === key 
+                ? 'linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)'
+                : 'rgba(255, 255, 255, 0.05)',
+              color: activeCategory === key ? '#fff' : '#9ca3af',
+              border: activeCategory === key 
+                ? '1px solid rgba(255, 255, 255, 0.2)'
+                : '1px solid transparent',
+              borderRadius: '6px',
+              cursor: 'pointer',
+              fontSize: '13px',
+              fontWeight: activeCategory === key ? '600' : '500',
+              transition: 'all 0.2s',
+              boxShadow: activeCategory === key 
+                ? '0 2px 8px rgba(99, 102, 241, 0.3)' 
+                : 'none',
+              whiteSpace: 'nowrap'
+            }}
+            onMouseEnter={(e) => {
+              if (activeCategory !== key) {
+                e.currentTarget.style.background = 'rgba(255, 255, 255, 0.08)';
+                e.currentTarget.style.color = '#e8eaed';
+              }
+            }}
+            onMouseLeave={(e) => {
+              if (activeCategory !== key) {
+                e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)';
+                e.currentTarget.style.color = '#9ca3af';
+              }
+            }}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+
+      {/* Components Grid */}
+      <div style={{
+        padding: '16px 20px',
         display: 'grid',
         gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))',
-        gap: '8px',
-        maxHeight: '180px',
+        gap: '12px',
+        maxHeight: '220px',
         overflowY: 'auto',
-        backgroundColor: '#252526'
+        background: 'rgba(0, 0, 0, 0.2)'
       }}>
         {Object.entries(currentItems).map(([key, item]: [string, any]) => {
-          const isMCU = activeCategory === 'microcontrollers';
           return (
             <button
               key={key}
               onClick={() => onAddNode(key, item.metadata, item)}
               style={{
-                ...componentButtonStyle,
-                borderLeft: `4px solid ${item.color}`
+                padding: '12px',
+                background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.04) 100%)',
+                color: '#e8eaed',
+                border: '1px solid rgba(255, 255, 255, 0.1)',
+                borderRadius: '8px',
+                cursor: 'pointer',
+                fontSize: '13px',
+                fontWeight: '500',
+                textAlign: 'center',
+                transition: 'all 0.2s',
+                backdropFilter: 'blur(10px)',
+                boxShadow: '0 2px 4px rgba(0, 0, 0, 0.2)',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '6px',
+                alignItems: 'center'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = 'linear-gradient(135deg, rgba(99, 102, 241, 0.2) 0%, rgba(99, 102, 241, 0.1) 100%)';
+                e.currentTarget.style.borderColor = 'rgba(99, 102, 241, 0.4)';
+                e.currentTarget.style.transform = 'translateY(-2px)';
+                e.currentTarget.style.boxShadow = '0 4px 12px rgba(99, 102, 241, 0.3)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = 'linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.04) 100%)';
+                e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.1)';
+                e.currentTarget.style.transform = 'translateY(0)';
+                e.currentTarget.style.boxShadow = '0 2px 4px rgba(0, 0, 0, 0.2)';
               }}
               title={key}
             >
-              <div style={{ fontWeight: 'bold', fontSize: '12px', marginBottom: '4px' }}>
+              <div style={{ 
+                fontSize: '11px', 
+                fontWeight: '700',
+                color: '#6366f1',
+                textTransform: 'uppercase',
+                letterSpacing: '0.5px'
+              }}>
                 {item.label}
               </div>
-              <div style={{ fontSize: '10px', color: '#888', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                {isMCU ? `${Object.keys(item.pins || {}).length} pins` : item.type}
-              </div>
+              {item.metadata?.voltage && (
+                <div style={{ fontSize: '10px', color: '#9ca3af' }}>
+                  {item.metadata.voltage}V
+                </div>
+              )}
             </button>
           );
         })}
@@ -228,40 +282,3 @@ export function Toolbar({ domain, onDomainChange, onAddNode, onClear, onLoadExam
     </div>
   );
 }
-
-const buttonStyle: React.CSSProperties = {
-  padding: '5px 10px',
-  backgroundColor: '#0e639c',
-  color: '#fff',
-  border: 'none',
-  cursor: 'pointer',
-  borderRadius: '3px',
-  fontSize: '12px',
-  fontWeight: '500'
-};
-
-const tabStyle: React.CSSProperties = {
-  padding: '6px 12px',
-  backgroundColor: '#2d2d30',
-  color: '#ccc',
-  border: 'none',
-  cursor: 'pointer',
-  fontSize: '11px',
-  fontWeight: '500',
-  transition: 'all 0.2s',
-  whiteSpace: 'nowrap'
-};
-
-const componentButtonStyle: React.CSSProperties = {
-  padding: '10px',
-  backgroundColor: '#2d2d30',
-  color: '#fff',
-  border: '1px solid #3e3e42',
-  cursor: 'pointer',
-  borderRadius: '4px',
-  fontSize: '11px',
-  textAlign: 'left',
-  transition: 'all 0.15s',
-  display: 'flex',
-  flexDirection: 'column'
-};

@@ -176,21 +176,3 @@ npm run dev
 ✓ Silence means correct
 ✓ Real lab feeling
 
-## Extension Points
-
-Add new validation rules:
-```typescript
-const myRule: ValidationRule = (connection, scene) => {
-  // Your validation logic
-  if (errorCondition) {
-    return {
-      connectionId: connection.id,
-      isValid: false,
-      severity: 'error' // or 'critical'
-    };
-  }
-  return null;
-};
-
-validationEngine.registerRule(myRule);
-```

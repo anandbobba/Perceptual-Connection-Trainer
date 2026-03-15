@@ -4,10 +4,12 @@ import { SceneManager } from './state/scene-manager';
 import { ValidationEngine } from './validation/engine';
 import { Canvas } from './components/Canvas';
 import { Toolbar } from './components/Toolbar';
+import { RealismAnalysisPanel } from './components/RealismAnalysisPanel';
 import { MICROCONTROLLERS } from './library/microcontrollers';
+import { ADVANCED_MICROCONTROLLERS } from './library/advanced-microcontrollers';
 import { PHYSICAL_COMPONENTS } from './library/components';
+import { PROFESSIONAL_SENSORS } from './library/professional-sensors';
 import { ML_COMPONENTS } from './library/ml-components';
-import { CIRCUIT_EXAMPLES } from './examples/circuit-examples';
 
 // Import physical rules
 import {
@@ -43,6 +45,34 @@ import {
   batchSizeConsistency
 } from './validation/logical-rules';
 
+// Import comprehensive professional-grade rules
+import {
+  ledCurrentProtection,
+  powerBudgetCheck,
+  groundLoopPrevention,
+  signalPinCompatibility,
+  capacitorVoltageRating,
+  resistorPowerRating,
+  motorDriverRequired,
+  i2cProtocolValidation,
+  transistorBiasing,
+  pwmPinValidation
+} from './validation/comprehensive-rules';
+
+// Import real-world ML pipeline rules
+import {
+  mlDatasetToModelRequired,
+  mlModelToLayersRequired,
+  mlLossToOptimizerRequired,
+  mlConvolutionalRequirements,
+  mlBatchNormPlacement,
+  mlAttentionHeads,
+  mlDropoutPlacement,
+  mlEmbeddingRequirements,
+  mlOptimizersRequireValidation,
+  mlLossFunctionCompatibility
+} from './validation/ml-rules';
+
 let nodeCounter = 0;
 let pinCounter = 0;
 let connectionCounter = 0;
@@ -53,6 +83,7 @@ function App() {
   const [scene, setScene] = useState(sceneManager.getScene());
   const [validationResults, setValidationResults] = useState<ValidationResult[]>([]);
   const [domain, setDomain] = useState<Domain>('physical');
+  const [isRealismPanelOpen, setIsRealismPanelOpen] = useState(false);
 
   // Keyboard shortcuts
   useEffect(() => {
@@ -90,6 +121,18 @@ function App() {
     validationEngine.registerRule(zenerPolarity);
     validationEngine.registerRule(displayBacklightProtection);
 
+    // COMPREHENSIVE PROFESSIONAL-GRADE RULES (Publication Quality)
+    validationEngine.registerRule(ledCurrentProtection);        // Ohm's law LED current calculation
+    validationEngine.registerRule(powerBudgetCheck);           // Pin current limits
+    validationEngine.registerRule(groundLoopPrevention);       // Ground loop detection
+    validationEngine.registerRule(signalPinCompatibility);     // Signal type checking
+    validationEngine.registerRule(capacitorVoltageRating);     // Capacitor voltage limits
+    validationEngine.registerRule(resistorPowerRating);        // Power dissipation (P=I²R)
+    validationEngine.registerRule(motorDriverRequired);        // Motor driver enforcement
+    validationEngine.registerRule(i2cProtocolValidation);      // I2C pullup resistors
+    validationEngine.registerRule(transistorBiasing);          // Transistor base resistor
+    validationEngine.registerRule(pwmPinValidation);           // PWM pin requirements
+
     // Logical rules
     validationEngine.registerRule(cnnRequiresImageData);
     validationEngine.registerRule(softmaxForClassification);
@@ -98,6 +141,18 @@ function App() {
     validationEngine.registerRule(optimizerAfterLoss);
     validationEngine.registerRule(rnnRequiresSequentialData);
     validationEngine.registerRule(batchSizeConsistency);
+
+    // REAL-WORLD ML PIPELINE RULES (Industry Standard)
+    validationEngine.registerRule(mlDatasetToModelRequired);      // Dataset must feed to model
+    validationEngine.registerRule(mlModelToLayersRequired);       // Layers required between dataset/model and loss
+    validationEngine.registerRule(mlLossToOptimizerRequired);     // Loss before optimizer
+    validationEngine.registerRule(mlConvolutionalRequirements);   // Conv2D layer sequences
+    validationEngine.registerRule(mlBatchNormPlacement);          // BatchNorm placement rules
+    validationEngine.registerRule(mlAttentionHeads);              // Attention head count validation
+    validationEngine.registerRule(mlDropoutPlacement);            // Dropout not last layer
+    validationEngine.registerRule(mlEmbeddingRequirements);       // Embedding with tokenizer
+    validationEngine.registerRule(mlOptimizersRequireValidation); // Optimizer LR validation
+    validationEngine.registerRule(mlLossFunctionCompatibility);   // Loss-Model task compatibility
   }, [validationEngine]);
 
   // Subscribe to scene changes
@@ -169,6 +224,25 @@ function App() {
     });
   };
 
+  const handleNodeDelete = (nodeId: string) => {
+    const currentScene = sceneManager.getScene();
+    
+    // Get all connections to/from this node
+    const connectionsToDelete = currentScene.connections.filter(
+      c => c.fromNodeId === nodeId || c.toNodeId === nodeId
+    );
+    
+    // Delete connections first
+    connectionsToDelete.forEach(c => sceneManager.removeConnection(c.id));
+    
+    // Remove the node (which also removes associated pins)
+    sceneManager.removeNode(nodeId);
+    
+    // Update scene
+    setScene(sceneManager.getScene());
+    setValidationResults([]);
+  };
+
   const handleAddNode = (type: string, metadata: any = {}, def: any = null) => {
     const id = `node-${nodeCounter++}`;
     const x = 150 + Math.random() * 500;
@@ -179,9 +253,12 @@ function App() {
     let color = '#999';
     let label = type.toUpperCase();
 
-    // Check if it's a microcontroller
-    if (def && MICROCONTROLLERS[type]) {
-      const mcuDef = MICROCONTROLLERS[type];
+    // Check ALL microcontroller sources (original + advanced)
+    const allMCUs = { ...MICROCONTROLLERS, ...ADVANCED_MICROCONTROLLERS };
+    const allComponents = { ...PHYSICAL_COMPONENTS, ...PROFESSIONAL_SENSORS };
+
+    if (def && allMCUs[type]) {
+      const mcuDef = allMCUs[type];
       width = mcuDef.width;
       height = mcuDef.height;
       label = mcuDef.label;
@@ -195,30 +272,28 @@ function App() {
         label,
         metadata: { ...mcuDef.metadata, _width: width, _height: height, _color: color }
       };
-      
-      sceneManager.addNode(node);
 
-      // Add all pins from microcontroller definition
-      mcuDef.pins.forEach(pinDef => {
-        const pin: Pin = {
-          id: `pin-${pinCounter++}`,
-          nodeId: id,
-          type: pinDef.type,
-          voltage: pinDef.voltage,
-          label: pinDef.label,
-          x: x + pinDef.offsetX,
-          y: y + pinDef.offsetY,
-          metadata: {
-            offsetX: pinDef.offsetX,
-            offsetY: pinDef.offsetY
-          }
-        };
-        sceneManager.addPin(pin);
-      });
+      // Create all pins
+      const pins: Pin[] = mcuDef.pins.map(pinDef => ({
+        id: `pin-${pinCounter++}`,
+        nodeId: id,
+        type: pinDef.type,
+        voltage: pinDef.voltage,
+        label: pinDef.label,
+        x: x + pinDef.offsetX,
+        y: y + pinDef.offsetY,
+        metadata: {
+          offsetX: pinDef.offsetX,
+          offsetY: pinDef.offsetY
+        }
+      }));
+      
+      // Add node with all pins as a single undo/redo operation
+      sceneManager.addNodeWithPins(node, pins);
     }
-    // Check if it's a physical component
-    else if (def && PHYSICAL_COMPONENTS[type]) {
-      const compDef = PHYSICAL_COMPONENTS[type];
+    // Check ALL physical components (original + professional sensors)
+    else if (def && allComponents[type]) {
+      const compDef = allComponents[type];
       width = compDef.width;
       height = compDef.height;
       label = compDef.label;
@@ -232,26 +307,24 @@ function App() {
         label,
         metadata: { ...compDef.metadata, _width: width, _height: height, _color: color }
       };
-      
-      sceneManager.addNode(node);
 
-      // Add pins from component definition
-      compDef.pins.forEach(pinDef => {
-        const pin: Pin = {
-          id: `pin-${pinCounter++}`,
-          nodeId: id,
-          type: pinDef.type,
-          voltage: pinDef.voltage,
-          label: pinDef.label,
-          x: x + pinDef.offsetX,
-          y: y + pinDef.offsetY,
-          metadata: {
-            offsetX: pinDef.offsetX,
-            offsetY: pinDef.offsetY
-          }
-        };
-        sceneManager.addPin(pin);
-      });
+      // Create all pins
+      const pins: Pin[] = compDef.pins.map(pinDef => ({
+        id: `pin-${pinCounter++}`,
+        nodeId: id,
+        type: pinDef.type,
+        voltage: pinDef.voltage,
+        label: pinDef.label,
+        x: x + pinDef.offsetX,
+        y: y + pinDef.offsetY,
+        metadata: {
+          offsetX: pinDef.offsetX,
+          offsetY: pinDef.offsetY
+        }
+      }));
+      
+      // Add node with all pins as a single undo/redo operation
+      sceneManager.addNodeWithPins(node, pins);
     }
     // Check if it's an ML component
     else if (def && ML_COMPONENTS[type]) {
@@ -269,39 +342,40 @@ function App() {
         label,
         metadata: { ...mlDef.metadata, _width: width, _height: height, _color: color }
       };
-      
-      sceneManager.addNode(node);
 
-      // Add generic input/output pins for ML components
-      // Input pin on the left
-      const inputPin: Pin = {
-        id: `pin-${pinCounter++}`,
-        nodeId: id,
-        type: 'signal',
-        label: 'in',
-        x: x - 5,
-        y: y + height / 2,
-        metadata: {
-          offsetX: -5,
-          offsetY: height / 2
+      // Create input/output pins for ML components - centered on component
+      const centerY = height / 2;
+      const pins: Pin[] = [
+        // Input pin on the left center
+        {
+          id: `pin-${pinCounter++}`,
+          nodeId: id,
+          type: 'signal',
+          label: 'in',
+          x: x,
+          y: y + centerY,
+          metadata: {
+            offsetX: 0,
+            offsetY: centerY
+          }
+        },
+        // Output pin on the right center
+        {
+          id: `pin-${pinCounter++}`,
+          nodeId: id,
+          type: 'signal',
+          label: 'out',
+          x: x + width,
+          y: y + centerY,
+          metadata: {
+            offsetX: width,
+            offsetY: centerY
+          }
         }
-      };
-      sceneManager.addPin(inputPin);
+      ];
       
-      // Output pin on the right
-      const outputPin: Pin = {
-        id: `pin-${pinCounter++}`,
-        nodeId: id,
-        type: 'signal',
-        label: 'out',
-        x: x + width + 5,
-        y: y + height / 2,
-        metadata: {
-          offsetX: width + 5,
-          offsetY: height / 2
-        }
-      };
-      sceneManager.addPin(outputPin);
+      // Add node with all pins as a single undo/redo operation
+      sceneManager.addNodeWithPins(node, pins);
     }
     // Fallback for unknown types
     else {
@@ -364,157 +438,37 @@ function App() {
     connectionCounter = 0;
   };
 
-  const handleLoadExample = (exampleId: string) => {
-    const example = CIRCUIT_EXAMPLES[exampleId];
-    if (!example) return;
-
-    // Clear current scene
-    handleClear();
-
-    // Switch domain if needed
-    if (example.domain !== domain) {
-      setDomain(example.domain);
-      sceneManager.reset();
-    }
-
-    // Add components
-    const nodeIds: string[] = [];
-    example.components.forEach((comp) => {
-      const id = `node-${nodeCounter++}`;
-      nodeIds.push(id);
-
-      let def = null;
-      let width = 60;
-      let height = 40;
-      let color = '#999';
-      let label = comp.type.toUpperCase();
-
-      // Find component definition
-      if (MICROCONTROLLERS[comp.type]) {
-        def = MICROCONTROLLERS[comp.type];
-        width = def.width;
-        height = def.height;
-        label = def.label;
-        color = '#0066cc';
-      } else if (PHYSICAL_COMPONENTS[comp.type]) {
-        def = PHYSICAL_COMPONENTS[comp.type];
-        width = def.width;
-        height = def.height;
-        label = def.label;
-        color = def.color;
-      } else if (ML_COMPONENTS[comp.type]) {
-        def = ML_COMPONENTS[comp.type];
-        width = def.width;
-        height = def.height;
-        label = def.label;
-        color = def.color;
-      }
-
-      const node: Node = {
-        id,
-        type: def?.type || comp.type,
-        x: comp.x,
-        y: comp.y,
-        label,
-        metadata: { ...def?.metadata, _width: width, _height: height, _color: color }
-      };
-
-      sceneManager.addNode(node);
-
-      // Add pins
-      if (MICROCONTROLLERS[comp.type]) {
-        const mcuDef = MICROCONTROLLERS[comp.type];
-        mcuDef.pins.forEach(pinDef => {
-          const pin: Pin = {
-            id: `pin-${pinCounter++}`,
-            nodeId: id,
-            type: pinDef.type,
-            voltage: pinDef.voltage,
-            label: pinDef.label,
-            x: comp.x + pinDef.offsetX,
-            y: comp.y + pinDef.offsetY,
-            metadata: { offsetX: pinDef.offsetX, offsetY: pinDef.offsetY }
-          };
-          sceneManager.addPin(pin);
-        });
-      } else if (PHYSICAL_COMPONENTS[comp.type]) {
-        const compDef = PHYSICAL_COMPONENTS[comp.type];
-        compDef.pins.forEach(pinDef => {
-          const pin: Pin = {
-            id: `pin-${pinCounter++}`,
-            nodeId: id,
-            type: pinDef.type,
-            voltage: pinDef.voltage,
-            label: pinDef.label,
-            x: comp.x + pinDef.offsetX,
-            y: comp.y + pinDef.offsetY,
-            metadata: { offsetX: pinDef.offsetX, offsetY: pinDef.offsetY }
-          };
-          sceneManager.addPin(pin);
-        });
-      } else if (ML_COMPONENTS[comp.type]) {
-        // Add generic input/output pins for ML components
-        const inputPin: Pin = {
-          id: `pin-${pinCounter++}`,
-          nodeId: id,
-          type: 'signal',
-          label: 'in',
-          x: comp.x - 5,
-          y: comp.y + height / 2,
-          metadata: { offsetX: -5, offsetY: height / 2 }
-        };
-        sceneManager.addPin(inputPin);
-
-        const outputPin: Pin = {
-          id: `pin-${pinCounter++}`,
-          nodeId: id,
-          type: 'signal',
-          label: 'out',
-          x: comp.x + width + 5,
-          y: comp.y + height / 2,
-          metadata: { offsetX: width + 5, offsetY: height / 2 }
-        };
-        sceneManager.addPin(outputPin);
-      }
-    });
-
-    // Add connections after a short delay to ensure pins are created
-    setTimeout(() => {
-      example.connections.forEach((conn) => {
-        const fromNodeId = nodeIds[conn.from];
-        const toNodeId = nodeIds[conn.to];
-
-        const fromNode = scene.nodes.find(n => n.id === fromNodeId);
-        const toNode = scene.nodes.find(n => n.id === toNodeId);
-
-        if (!fromNode || !toNode) return;
-
-        let fromPinId: string | undefined;
-        let toPinId: string | undefined;
-
-        if (conn.fromPin) {
-          const fromPin = scene.pins.find(p => p.nodeId === fromNodeId && p.label === conn.fromPin);
-          fromPinId = fromPin?.id;
-        }
-
-        if (conn.toPin) {
-          const toPin = scene.pins.find(p => p.nodeId === toNodeId && p.label === conn.toPin);
-          toPinId = toPin?.id;
-        }
-
-        handleConnectionCreate(fromNodeId, toNodeId, fromPinId, toPinId);
-      });
-    }, 100);
-  };
-
   return (
-    <div style={{ width: '100vw', height: '100vh', backgroundColor: '#0d1117', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+    <div style={{ 
+      width: '100vw', 
+      height: '100vh', 
+      background: 'linear-gradient(135deg, #0f1117 0%, #1a1d29 50%, #0f1117 100%)',
+      overflow: 'hidden', 
+      display: 'flex', 
+      flexDirection: 'column',
+      position: 'relative'
+    }}>
+      {/* Animated background grid */}
+      <div style={{
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        backgroundImage: `
+          linear-gradient(rgba(99, 102, 241, 0.03) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(99, 102, 241, 0.03) 1px, transparent 1px)
+        `,
+        backgroundSize: '50px 50px',
+        pointerEvents: 'none',
+        opacity: 0.4
+      }} />
+      
       <Toolbar
         domain={domain}
         onDomainChange={handleDomainChange}
         onAddNode={handleAddNode}
         onClear={handleClear}
-        onLoadExample={handleLoadExample}
       />
       <div style={{ flex: 1, position: 'relative' }}>
         <Canvas
@@ -523,31 +477,82 @@ function App() {
           onConnectionCreate={handleConnectionCreate}
           onConnectionRemove={handleConnectionRemove}
           onNodeMove={handleNodeMove}
+          onNodeDelete={handleNodeDelete}
         />
         
         {/* Status indicator */}
         {scene.connections.length > 0 && (
           <div style={{
             position: 'absolute',
-            bottom: '20px',
-            right: '20px',
-            padding: '12px 20px',
-            backgroundColor: 'rgba(0, 0, 0, 0.85)',
-            borderRadius: '8px',
-            border: validationResults.some(r => !r.isValid) ? '2px solid #ff4444' : '2px solid #00ff88',
-            fontFamily: 'monospace',
-            fontSize: '13px',
-            color: validationResults.some(r => !r.isValid) ? '#ff4444' : '#00ff88',
-            fontWeight: 'bold',
+            bottom: '24px',
+            right: '24px',
+            padding: '16px 28px',
+            background: validationResults.some(r => !r.isValid)
+              ? 'linear-gradient(135deg, rgba(239, 68, 68, 0.95) 0%, rgba(220, 38, 38, 0.95) 100%)'
+              : 'linear-gradient(135deg, rgba(16, 185, 129, 0.95) 0%, rgba(5, 150, 105, 0.95) 100%)',
+            borderRadius: '12px',
+            border: '2px solid rgba(255, 255, 255, 0.2)',
+            fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+            fontSize: '14px',
+            color: '#fff',
+            fontWeight: '700',
+            letterSpacing: '0.5px',
+            textTransform: 'uppercase',
             boxShadow: validationResults.some(r => !r.isValid) 
-              ? '0 0 20px rgba(255, 68, 68, 0.5)' 
-              : '0 0 20px rgba(0, 255, 136, 0.5)',
+              ? '0 8px 32px rgba(239, 68, 68, 0.5), 0 0 60px rgba(239, 68, 68, 0.3)' 
+              : '0 8px 32px rgba(16, 185, 129, 0.5), 0 0 60px rgba(16, 185, 129, 0.3)',
+            backdropFilter: 'blur(10px)',
+            animation: validationResults.some(r => !r.isValid) ? 'pulse 2s infinite' : 'none',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '10px'
           }}>
             {validationResults.some(r => !r.isValid) 
               ? `⚠️ ${validationResults.filter(r => !r.isValid).length} ERROR${validationResults.filter(r => !r.isValid).length > 1 ? 'S' : ''}`
-              : '✅ PERFECT'}
+              : '✅ PERFECT CIRCUIT'}
           </div>
         )}
+
+        {/* Realism Analysis Button */}
+        {scene.nodes.length > 0 && (
+          <button
+            onClick={() => setIsRealismPanelOpen(true)}
+            style={{
+              position: 'absolute',
+              bottom: '24px',
+              left: '24px',
+              padding: '12px 24px',
+              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+              border: '2px solid rgba(255, 255, 255, 0.2)',
+              borderRadius: '8px',
+              color: '#fff',
+              fontWeight: '600',
+              fontSize: '13px',
+              cursor: 'pointer',
+              fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+              transition: 'all 0.3s ease',
+              boxShadow: '0 8px 32px rgba(102, 126, 234, 0.4)',
+              backdropFilter: 'blur(10px)'
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = 'linear-gradient(135deg, #764ba2 0%, #667eea 100%)';
+              e.currentTarget.style.boxShadow = '0 12px 48px rgba(102, 126, 234, 0.6)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
+              e.currentTarget.style.boxShadow = '0 8px 32px rgba(102, 126, 234, 0.4)';
+            }}
+          >
+            📊 Realism Analysis
+          </button>
+        )}
+
+        {/* Realism Analysis Panel */}
+        <RealismAnalysisPanel
+          scene={scene}
+          isOpen={isRealismPanelOpen}
+          onClose={() => setIsRealismPanelOpen(false)}
+        />
       </div>
     </div>
   );
